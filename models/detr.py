@@ -137,15 +137,15 @@ class SetCriterion(nn.Module):
         assert 'pred_logits' in outputs
         src_logits = outputs['pred_logits']  # 分类：[bs, 100, 92类别]
 
-        # idx tuple:2  0=[num_all_gt] 记录每个gt属于哪张图片  1=[num_all_gt] 记录每个匹配到的预测框的index
+        # idx tuple:2  0=[num_all_gt] 记录每个gt属于哪张图片(batch_id)  1=[num_all_gt] 记录每个匹配到的预测框的index
         idx = self._get_src_permutation_idx(indices)
-        target_classes_o = torch.cat([t["labels"][J] for t, (_, J) in zip(targets, indices)])
+        target_classes_o = torch.cat([t["labels"][J] for t, (_, J) in zip(targets, indices)])#每个box对应的类别idx
         target_classes = torch.full(src_logits.shape[:2], self.num_classes,
-                                    dtype=torch.int64, device=src_logits.device)
+                                    dtype=torch.int64, device=src_logits.device)# [N个batch,100个box]默认的类别为91(背景)
         # 正样本+负样本  上面匹配到的预测框作为正样本 正常的idx  而100个中没有匹配到的预测框作为负样本(idx=91 背景类)
         target_classes[idx] = target_classes_o
 
-        # 分类损失 = 正样本 + 负样本
+        # 分类损失 = 正样本 + 负样本   n个正样本，92通道中[和label匹配的类别idx]应该收敛到1，  100-n个负样本，91(最后一个)号通道应该收敛到1
         loss_ce = F.cross_entropy(src_logits.transpose(1, 2), target_classes, self.empty_weight)
         losses = {'loss_ce': loss_ce}
 

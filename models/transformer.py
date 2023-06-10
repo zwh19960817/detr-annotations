@@ -68,7 +68,7 @@ class Transformer(nn.Module):
         """
         # bs  c=256  h=19  w=26
         bs, c, h, w = src.shape
-        # src: [bs,256,19,26]=[bs,C,H,W] -> [494,bs,256]=[HW,bs,C]
+        # src: [bs,256,19,26]=[bs,C,H,W] -> [494,bs,256]=[HW,bs,C] 拉平
         src = src.flatten(2).permute(2, 0, 1)
         # pos_embed: [bs, 256, 19, 26]=[bs,C,H,W] -> [494,bs,256]=[HW,bs,C]
         pos_embed = pos_embed.flatten(2).permute(2, 0, 1)
@@ -244,7 +244,7 @@ class TransformerEncoderLayer(nn.Module):
         #            而在encoder中通常为None 不适用  decoder中才使用
         src2 = self.self_attn(q, k, value=src, attn_mask=src_mask,
                               key_padding_mask=src_key_padding_mask)[0]
-        # add + norm + feed forward + add + norm
+        # add + norm + feed forward + add + norm  残差网络
         src = src + self.dropout1(src2)
         src = self.norm1(src)
         src2 = self.linear2(self.dropout(self.activation(self.linear1(src))))
